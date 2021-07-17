@@ -12,8 +12,7 @@ import train.fine_tune as fine_tune
 import inference.inference as inference
 import video.video as video
 net_dictionary = {
-    "transform_net": tn.TransformNet(),
-    "transform_netAgrim":tn.TransformNetAgrim()
+    "transform_net": tn.TransformNet()
 }
 
 
@@ -84,7 +83,7 @@ def arg_pass():
 if __name__ == "__main__":
     mode, weights_path, style_path, model_path, dataset_path, network, batch, content_weight, style_weight, video_path, style_it = arg_pass()
     model = net_dictionary[network]
-    modelAgrim = net_dictionary["transform_netAgrim"]
+
     if(mode=="train"):
         
         weights_file = weights_path
@@ -159,7 +158,7 @@ if __name__ == "__main__":
         weights_path = weights_file+"Agrim_model_"+str(len(folder_list)+1)+"/model"
 
         
-        fine_tune.train(model, modelAgrim, model_path, style_layers, content_layers, style_path, dataset_path, content_weight, style_weight, TV_WEIGHT , weights_path, FLOW_WEIGHT)
+        #fine_tune.train(model, model_path, style_layers, content_layers, style_path, dataset_path, content_weight, style_weight, TV_WEIGHT , weights_path, FLOW_WEIGHT)
     elif mode=="to_model":
         model.load_weights(model_path).expect_partial()
         inputs = tf.keras.Input(shape=[256, 256, 3], batch_size= 1)
