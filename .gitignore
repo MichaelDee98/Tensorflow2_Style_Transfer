@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+dataset/
+Davis/
+saved_model/
+saved_weights/
+style_images/
+video/
+video_test/
