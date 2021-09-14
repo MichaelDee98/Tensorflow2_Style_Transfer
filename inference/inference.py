@@ -9,13 +9,14 @@ import random
 def inference(model_path, image_path, network, android = False):
     model = network
     model.load_weights(model_path)
-    zeros = tf.zeros(shape=(1, 256, 256, 3))
+    
 
     substring = model_path.split("/")
     model_name = substring[-2]
 
     image = utils.load_img(image_path)
-
+    shape = tf.shape(image)
+    zeros = tf.zeros(shape=shape)
     start_time = time.time()
     output = model(image, zeros)
     end_time = time.time()
@@ -42,7 +43,10 @@ def rand_multiple_inferences(no_of_inferences, network, dataset_path, andoird = 
     
     for _ in range(no_of_inferences):
         index = random.randint(1, num_of_images)
-        output = network(utils.load_img(dataset_path + content_images_names[index],resize=False))
+        image = utils.load_img(dataset_path + content_images_names[index],resize=True)
+        shape = tf.shape(image)
+        zeros = tf.zeros(shape=shape)
+        output = network(image, zeros)
         if andoird:
             output = tf.clip_by_value(output, 0.0, 1.0)
             img_output.append(utils.tensor_to_image(output, android = True))

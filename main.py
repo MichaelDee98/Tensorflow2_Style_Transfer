@@ -123,7 +123,12 @@ if __name__ == "__main__":
     elif(mode=="inference"):
         assert model_path is not None
         
+        #substring = weights_path.split("/")
+        #model_name = substring[-2]
         inference.inference(model_path,"./dataset/mini_batch/000000365766.jpg", model)
+        #outputs = inference.rand_multiple_inferences(10, model, dataset_path)
+        #for i, output in enumerate(outputs):
+        #    output.save("/".join(substring[:-1])+"/"+model_name+"rand"+str(i)+".jpg")
     elif(mode=="video"):
         assert model_path is not None
         assert video_path is not None
@@ -136,6 +141,7 @@ if __name__ == "__main__":
 
         video.make_video(dataset_path, model, model_path, style_it)
     elif mode=="fine_tune":
+
 
         weights_file = weights_path
         # Creating a new directory for saving the model weights
@@ -157,8 +163,8 @@ if __name__ == "__main__":
         utils.log_information(weights_file+"Agrim_model_"+str(len(folder_list)+1)+"/", network,content_weight, style_weight, dataset_path, style_path, content_layers, style_layers)
         weights_path = weights_file+"Agrim_model_"+str(len(folder_list)+1)+"/model"
 
-        
-        #fine_tune.train(model, model_path, style_layers, content_layers, style_path, dataset_path, content_weight, style_weight, TV_WEIGHT , weights_path, FLOW_WEIGHT)
+
+        fine_tune.train(model, model_path, style_layers, content_layers, style_path, dataset_path, content_weight, style_weight, TV_WEIGHT , weights_path, FLOW_WEIGHT)
     elif mode=="to_model":
         model.load_weights(model_path).expect_partial()
         inputs = tf.keras.Input(shape=[256, 256, 3], batch_size= 1)
