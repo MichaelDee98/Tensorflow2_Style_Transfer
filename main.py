@@ -14,7 +14,8 @@ import inference.inference as inference
 import video.video as video
 net_dictionary = {
     "transform_net"        : tn.TransformNet(),
-    "transform_netAndroid" :tn.TransformNetAndroid()
+    "transform_netAndroid" : tn.TransformNetAndroid(),
+    "transform_netOnly"    : tn.TransformNetOnly()
 }
 
 
@@ -66,7 +67,7 @@ def arg_pass():
     parser.add_argument('--dataset_path', required=False, default=DATASET_PATH, 
                         help="Enter the dataset_path e.g /home/user/Desktop/dataset/val2017")
     parser.add_argument('--network', required=False, default=TRANS_NETWORK,
-                        help="Choose the network you want to train. Valid nets are transform_net. Default is transform_net")
+                        help="Choose the network you want to train. Valid nets are transform_net, transform_netAndroid and transform_netOnly. Default is transform_net")
     parser.add_argument('--batch', required=False,type=int, default = BATCH,
                         help="Choose batch size for training. Default is 10")
     parser.add_argument('--content_weight', required=False, type=int, default=CONTENT_WEIGHT,
