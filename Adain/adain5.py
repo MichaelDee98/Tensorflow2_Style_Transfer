@@ -11,7 +11,8 @@ import tensorflow as tf
 import numpy as np
 import PIL
 import time
-
+import os
+import random
 """#Global"""
 
 BATCH_SIZE = 8
@@ -130,23 +131,23 @@ def decode_img(img, reverse_channels=False):
   img = tf.cast(img, dtype=tf.uint8)
   return img
 
-style_path ="/home/litsos/style_transfer/dataset/wikiart" #"/home/michlist/Desktop/Style_Transfer/Tensorflow2_Style_Transfer/dataset"
-content_path = "/home/litsos/style_transfer/dataset/train2014"
+#style_path ="/home/litsos/style_transfer/dataset/wikiart" #"/home/michlist/Desktop/Style_Transfer/Tensorflow2_Style_Transfer/dataset"
+#content_path = "/home/litsos/style_transfer/dataset/train2014"
 
 """##Dataset"""
 
-style_train_ds = prepare_dataset(style_path + '/**/*.jpg')
+#style_train_ds = prepare_dataset(style_path + '/**/*.jpg')
 
-content_train_ds = prepare_dataset(content_path + '/*.jpg')
+#content_train_ds = prepare_dataset(content_path + '/*.jpg')
 
-print(f"Style images {len(style_train_ds)}")
+#print(f"Style images {len(style_train_ds)}")
 
-print(f"Contain images {len(content_train_ds)}")
+#print(f"Contain images {len(content_train_ds)}")
 
-train_ds = tf.data.Dataset.zip((style_train_ds, content_train_ds))
-train_ds = train_ds.shuffle(BATCH_SIZE).batch(BATCH_SIZE).prefetch(tf.data.experimental.AUTOTUNE)
+#train_ds = tf.data.Dataset.zip((style_train_ds, content_train_ds))
+#train_ds = train_ds.shuffle(BATCH_SIZE).batch(BATCH_SIZE).prefetch(tf.data.experimental.AUTOTUNE)
 
-print(f"Final train dataset {len(train_ds)}")
+#print(f"Final train dataset {len(train_ds)}")
 
 """#Networks"""
 
@@ -414,7 +415,7 @@ with tf.GradientTape() as tape:
 gradients = tape.gradient(loss, decoder.trainable_variables)
 optimizer.apply_gradients(zip(gradients, decoder.trainable_variables))
 '''
-
+'''
 EPOCHS = 4
 PROGBAR = tf.keras.utils.Progbar(len(train_ds))
 for epoch in range(EPOCHS):
@@ -446,40 +447,54 @@ for epoch in range(EPOCHS):
 
 decoder.save_weights("./weights/git/decoder")
 '''
-style = load_img_Inference("/content/drive/MyDrive/style_images/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg")
-content = load_img_Inference("/content/drive/MyDrive/content_images/val2017/000000446117.jpg")
+
+style = load_img_Inference("/home/michlist/Desktop/Style_Transfer/Tensorflow2_Style_Transfer/style_images/a-muse-1935.jpg")
 style*=255
-content*=255
-style1 = load_img_Inference("/content/drive/MyDrive/content_images/Wikiart/Action_painting/hans-hofmann_the-wind-1942.jpg")
-content1 = load_img_Inference("/content/drive/MyDrive/content_images/mini_batch/000000000802.jpg")
-
-
-
 style = tf.reverse(style, axis=[-1])
 style = preprocess(style)
-content = tf.reverse(content, axis=[-1])
-content = preprocess(content)
+decoder.load_weights("./weights/normalised/7/decoder")
+content_images_names = os.listdir("/home/michlist/Desktop/Style_Transfer/Tensorflow2_Style_Transfer/dataset/mini_batch")
+metrics = []
 
-decoder.load_weights("/content/decoder")
-encoded_content = encoder[-1](content)
-encoded_style = encoder[-1](style)
+for _ in range(100):
+  index = random.randint(1, 800)
+  content = load_img_Inference("/home/michlist/Desktop/Style_Transfer/Tensorflow2_Style_Transfer/dataset/mini_batch/"+content_images_names[index])
+  
+  content*=255
+  #style1 = load_img_Inference("/content/drive/MyDrive/content_images/Wikiart/Action_painting/hans-hofmann_the-wind-1942.jpg")
+  #content1 = load_img_Inference("/content/drive/MyDrive/content_images/mini_batch/000000000802.jpg")
 
 
 
-adain_output = adaptive_instance_normalization(encoded_style, encoded_content)
+
+  content = tf.reverse(content, axis=[-1])
+  content = preprocess(content)
 
 
-target_img = decoder(adain_output)
 
-target_img = deprocess(target_img)
-target_img = tf.reverse(target_img, axis=[-1])
-target_img = tf.clip_by_value(target_img, 0.0, 255.0)
+  start = time.time()
+  encoded_content = encoder[-1](content)
+  encoded_style = encoder[-1](style)
 
-tensor_to_image(content)
 
-tensor_to_image(style)
 
-target_img
+  adain_output = adaptive_instance_normalization(encoded_style, encoded_content)
 
-tensor_to_image(target_img/255)
-'''
+  #start = time.time()
+  target_img = decoder(adain_output)
+  end = time.time()
+  print(f"Inference time = {end-start}")
+  metrics.append(end-start)
+  start = time.time()
+  target_img = deprocess(target_img)
+  target_img = tf.reverse(target_img, axis=[-1])
+  target_img = tf.clip_by_value(target_img, 0.0, 255.0)
+  end=time.time()
+  print(f"Post Process time = {end-start}")
+#tensor_to_image(content)
+print(f"Metrics average time {tf.reduce_mean(metrics)}")
+#tensor_to_image(style)
+
+#target_img
+
+#tensor_to_image(target_img/255)

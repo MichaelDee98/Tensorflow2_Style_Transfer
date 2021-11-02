@@ -114,9 +114,9 @@ class TransformNet(tf.keras.models.Model):
 
 
 
-  def call(self, inputs1, inputs2, crop = False):
-    x = tf.keras.layers.concatenate([inputs1,inputs2])
-    x = self.conv1(x)
+  def call(self, inputs1,crop = False):
+    #x = tf.keras.layers.concatenate([inputs1,inputs2])
+    x = self.conv1(inputs1)
     x = self.conv2(x)
     x = self.conv3(x)
     x = self.res1(x)
@@ -132,4 +132,39 @@ class TransformNet(tf.keras.models.Model):
     x = tf.nn.tanh(x)
     #x = (x + 1) / 2
     x=(x + 1) * (255. / 2)
+    return x
+
+
+class TransformNetAndroid(tf.keras.models.Model):
+  def __init__(self):
+    super(TransformNetAndroid, self).__init__()
+    self.conv1 = ConvLayer(32, (9,9), strides=(1,1), padding='same', name="conv_1")
+    self.conv2 = ConvLayer(64, (3,3), strides=(2,2), padding='same', name="conv_2")
+    self.conv3 = ConvLayer(128, (3,3), strides=(2,2), padding='same', name="conv_3")
+    self.res1 = ResBlock(128, prefix="res_1")
+    self.res2 = ResBlock(128, prefix="res_2")
+    self.res3 = ResBlock(128, prefix="res_3")
+    self.res4 = ResBlock(128, prefix="res_4")
+    self.res5 = ResBlock(128, prefix="res_5")
+    self.convt1 = ConvTLayer(64, (3,3), strides=(2,2), padding='same', name="conv_t_1")
+    self.convt2 = ConvTLayer(32, (3,3), strides=(2,2), padding='same', name="conv_t_2")
+    self.conv4 = ConvLayer(3, (9,9), strides=(1,1), padding='same', activate=False, name="conv_4")
+
+
+
+  def call(self, inputs):
+    x = self.conv1(inputs)
+    x = self.conv2(x)
+    x = self.conv3(x)
+    x = self.res1(x)
+    x = self.res2(x)
+    x = self.res3(x)
+    x = self.res4(x)
+    x = self.res5(x)
+    x = self.convt1(x)
+    x = self.convt2(x)
+    x = self.conv4(x)
+    x = tf.nn.tanh(x)
+    x = (x + 1) / 2
+
     return x

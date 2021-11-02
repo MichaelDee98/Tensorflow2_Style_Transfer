@@ -10,7 +10,7 @@ import modules.loss_network as ln
 
 
 opt = tf.optimizers.Adam(learning_rate=0.001)
-
+EPOCHS = 2
 
 
 def prepare_dataset(batch_size, style_path, dataset_path):
@@ -69,12 +69,14 @@ def train(model, style_layers, content_layers, batch_size, style_path, dataset_p
 
     
 
-    epochs = 2
+
     isBreak = 0
     start = time.time()
-    for n in range(epochs):
+    PROGBAR = tf.keras.utils.Progbar(len(train_dataset))
+    for n in range(EPOCHS):
         print(f"Epoch = {n + 1}")
         iteration = 0
+
         for img in train_dataset:
 
             for j, img_p in enumerate(img):
@@ -93,6 +95,8 @@ def train(model, style_layers, content_layers, batch_size, style_path, dataset_p
             if np.isnan(loss):
                 isBreak = 1
                 break
+
+            PROGBAR.update(iteration)
 
 
 

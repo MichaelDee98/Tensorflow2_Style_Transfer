@@ -1,6 +1,7 @@
 import tensorflow as tf
 import argparse
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 
 
@@ -12,13 +13,17 @@ import train.fine_tune as fine_tune
 import inference.inference as inference
 import video.video as video
 net_dictionary = {
-    "transform_net": tn.TransformNet()
+    "transform_net"        : tn.TransformNet(),
+    "transform_netAndroid" :tn.TransformNetAndroid()
 }
 
 
-MODE = "train"
+########GLOBAL VARIABLES########
+
+
+MODE = "train" #the available modes are train, inference, video, video_davis, fine_tune, to_model, android_train
 STYLE_PATH = "style_images/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg"
-DATASET_PATH = "./dataset/val2017/"
+DATASET_PATH = "./dataset/val2017/" #Dataset path for content images
 SAVED_WEIGHTS_PATH ="./saved_weights/"
 TRANS_NETWORK = "transform_net"
 
@@ -28,6 +33,17 @@ STYLE_WEIGHT = 4e1
 TV_WEIGHT = 2e2
 FLOW_WEIGHT = 100
 
+#Commong content & style layers
+CONTENT_LAYERS = ['block4_conv2']
+STYLE_LAYERS = ['block1_conv1',
+                'block2_conv1',
+                'block3_conv1',
+                'block4_conv1',
+                'block5_conv1']
+################################
+
+
+#String to bool function for arg pass
 def str2bool(v):
     if isinstance(v, bool):
         return v
@@ -37,6 +53,7 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
+        
 def arg_pass():
     parser = argparse.ArgumentParser(description='Algorithm for training a style transfer network')
     
@@ -52,8 +69,10 @@ def arg_pass():
                         help="Choose the network you want to train. Valid nets are transform_net. Default is transform_net")
     parser.add_argument('--batch', required=False,type=int, default = BATCH,
                         help="Choose batch size for training. Default is 10")
-    parser.add_argument('--content_weight', required=False, type=int, default=CONTENT_WEIGHT)
-    parser.add_argument('--style_weight', required=False, type=float, default=STYLE_WEIGHT)
+    parser.add_argument('--content_weight', required=False, type=int, default=CONTENT_WEIGHT,
+                        help='Content Weight. Default is 1e0')
+    parser.add_argument('--style_weight', required=False, type=float, default=STYLE_WEIGHT,
+                        help='Style Weight. Default is 4e1.')
     parser.add_argument('--video', required=False,
                     help="Choose the video you want to style.")
     parser.add_argument('--style_it', required=False, type = str2bool)
@@ -79,7 +98,7 @@ def arg_pass():
 
 
 
-
+#Main of script
 if __name__ == "__main__":
     mode, weights_path, style_path, model_path, dataset_path, network, batch, content_weight, style_weight, video_path, style_it = arg_pass()
     model = net_dictionary[network]
@@ -93,13 +112,9 @@ if __name__ == "__main__":
             if "." in element:
                 folder_list.remove(element)
 
-        content_layers = ['block4_conv2']
+        content_layers = CONTENT_LAYERS
 
-        style_layers = ['block1_conv1',
-                        'block2_conv1',
-                        'block3_conv1',
-                        'block4_conv1',
-                        'block5_conv1']
+        style_layers = STYLE_LAYERS
         
         os.mkdir(weights_path+"model_"+str(len(folder_list)+1)+"/")
         
@@ -108,7 +123,7 @@ if __name__ == "__main__":
 
         
         trained_model = train.train(model, style_layers, content_layers, batch, style_path, dataset_path, content_weight, style_weight, TV_WEIGHT , weights_path)
-        print("Inference on sample.")
+        print("Inference on sample. Will produce 10 images")
 
     
 
@@ -117,15 +132,30 @@ if __name__ == "__main__":
 
     
         outputs = inference.rand_multiple_inferences(10, model, dataset_path)
+        
         for i, output in enumerate(outputs):
             output.save("/".join(substring[:-1])+"/"+model_name+"rand"+str(i)+".jpg")
 
     elif(mode=="inference"):
         assert model_path is not None
         
+        #model = net_dictionary[network]
         #substring = weights_path.split("/")
         #model_name = substring[-2]
-        inference.inference(model_path,"./dataset/mini_batch/000000365766.jpg", model)
+
+        #inference.inference(model_path,"./dataset/mini_batch/000000365766.jpg", model)
+        metrics = (inference.rand_multiple_inferences(100, model, dataset_path))
+        print(f"Average of metrics {tf.reduce_mean(metrics)}")
+
+        #for i, output in enumerate(outputs):
+        #    output.save("/".join(substring[:-1])+"/"+model_name+"rand"+str(i)+".jpg")
+
+    elif(mode=="inference_android"):
+        assert model_path is not None
+        model = net_dictionary["transform_netAndroid"]
+        #substring = weights_path.split("/")
+        #model_name = substring[-2]
+        inference.inference(model_path,"./dataset/mini_batch/000000365766.jpg", model, android=True)
         #outputs = inference.rand_multiple_inferences(10, model, dataset_path)
         #for i, output in enumerate(outputs):
         #    output.save("/".join(substring[:-1])+"/"+model_name+"rand"+str(i)+".jpg")
@@ -150,13 +180,9 @@ if __name__ == "__main__":
             if "." in element:
                 folder_list.remove(element)
 
-        content_layers = ['block4_conv2']
+        content_layers = CONTENT_LAYERS
 
-        style_layers = ['block1_conv1',
-                        'block2_conv1',
-                        'block3_conv1',
-                        'block4_conv1',
-                        'block5_conv1']
+        style_layers = STYLE_LAYERS
         
         os.mkdir(weights_path+"Agrim_model_"+str(len(folder_list)+1)+"/")
         
@@ -172,6 +198,7 @@ if __name__ == "__main__":
         savedModel = tf.keras.Model(inputs, outputs)
         savedModel.save("saved_model/temp_model")
     elif mode=="android_train":
+        model = net_dictionary["transform_netAndroid"]
         weights_file = weights_path
         # Creating a new directory for saving the model weights
         folder_list = os.listdir(weights_path)
@@ -179,13 +206,9 @@ if __name__ == "__main__":
             if "." in element:
                 folder_list.remove(element)
 
-        content_layers = ['block4_conv2']
+        content_layers = CONTENT_LAYERS
 
-        style_layers = ['block1_conv1',
-                        'block2_conv1',
-                        'block3_conv1',
-                        'block4_conv1',
-                        'block5_conv1']
+        style_layers = STYLE_LAYERS
         
         os.mkdir(weights_path+"model_"+str(len(folder_list)+1)+"/")
         
